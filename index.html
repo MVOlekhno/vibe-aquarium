@@ -98,22 +98,100 @@
     .report .again { font-size: 10px; font-weight: 500; }
     .report.on .again { animation: breathe 3s ease-in-out infinite; }
 
-    /* Области по именам: если подсказки спрятаны, событие и пауза остаются на своих местах. */
-    .bottom { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "hint focus pause"; align-items: end; gap: 16px; }
+    /* Области по именам: если подсказки спрятаны, событие, суперсилы и пауза остаются на своих местах. */
+    .bottom { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "hint focus side"; align-items: end; gap: 16px; }
     .hint { grid-area: hint; font-size: 10px; line-height: 1.85; color: var(--faint); }
     .focus { grid-area: focus; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
-    .bite { display: inline-flex; align-items: center; gap: 11px; font-size: 11px; font-weight: 500; padding: 10px 16px 9px;
-      border: 1px solid rgba(255, 112, 112, 0.5); background: rgba(40, 6, 12, 0.45); opacity: 0; transform: translateY(6px);
-      transition: opacity 0.4s ease, transform 0.4s ease; }
-    .bite.on { opacity: 1; transform: none; }
-    .bite b { font-weight: 500; font-size: 13px; letter-spacing: 0.1em; }
-    .bite .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blood); box-shadow: 0 0 12px var(--blood); }
-    .bite.on .dot { animation: throb 0.9s ease-in-out infinite; }
     .event { font-style: italic; font-size: clamp(26px, 2.6vw, 34px); line-height: 1.1; max-width: 15em; min-height: 1.1em;
       text-wrap: balance; opacity: 0; transform: translateY(8px); transition: opacity 1.1s ease, transform 1.1s ease; }
     .event.on { opacity: 1; transform: none; transition-duration: 0.5s; }
 
-    .pause { grid-area: pause; justify-self: end; position: relative; pointer-events: auto; }
+    /* Сцена у большого пальца: водолаз слева, аравана справа, между ними плашки клёва, динамита и оглушённых.
+       Высота сцены не зависит от плашек и подписей: кнопки не прыгают под пальцем. */
+    .stage { --pw: 60px; --pw-col: 100px; display: grid; grid-template-columns: var(--pw-col) minmax(0, 1fr) var(--pw-col); column-gap: 10px;
+      align-items: start; width: 540px; max-width: 100%; }
+    .pw { display: flex; flex-direction: column; align-items: center; align-self: end; gap: 7px; min-width: 0; transition: opacity 0.6s ease; }
+    .pw.off { visibility: hidden; } /* старая сборка сил не шлёт — кнопок нет, место держим */
+    .pw-btn { position: relative; box-sizing: border-box; flex: none; width: var(--pw); height: var(--pw); margin: 0; padding: 0; border: 0;
+      border-radius: 50%; background: radial-gradient(closest-side, rgba(14, 20, 27, 0.8), rgba(6, 9, 13, 0.52)); color: var(--bone);
+      cursor: pointer; pointer-events: auto; touch-action: manipulation; transition: transform 0.15s ease; }
+    .pw-btn:active { transform: scale(0.94); }
+    .pw-btn:focus-visible { outline: 1px solid var(--bone); outline-offset: 4px; }
+    /* Свечение «жми сейчас» — отдельным слоем: пульсирует только его opacity. */
+    .pw-btn::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; opacity: 0; pointer-events: none;
+      box-shadow: 0 0 20px 4px rgba(255, 138, 112, 0.45), inset 0 0 14px rgba(255, 138, 112, 0.32); }
+    .pw-btn svg { position: absolute; overflow: visible; pointer-events: none; }
+    .pw-ring { left: 0; top: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .pw-ring circle { fill: none; stroke-width: 1.3; }
+    .pw-ring .track { stroke: var(--line); }
+    .pw-ring .fill { stroke: var(--dim); transition: stroke-dasharray 0.2s linear, stroke 0.5s ease; }
+    .pw-glyph { left: 20%; top: 20%; width: 60%; height: 60%; fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.38; transition: opacity 0.5s ease; }
+    .pw-flash { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--bone); opacity: 0; pointer-events: none; }
+    .pw-cap { box-sizing: border-box; width: 100%; height: 4.2em; margin: 0; font-size: 9px; line-height: 1.4; letter-spacing: 0.1em;
+      text-align: center; color: var(--faint); overflow-wrap: anywhere; pointer-events: none; }
+    .pw-cap > span { display: block; }
+    .pw-name { color: var(--dim); }
+    .pw-why { text-wrap: balance; transition: color 0.5s ease; }
+    .pw.st-charging .pw-glyph { opacity: 0.55; }
+    .pw.st-charging .pw-ring .fill { stroke: rgba(235, 229, 218, 0.86); }
+    .pw.st-ready .pw-glyph, .pw.st-busy .pw-glyph { opacity: 1; }
+    .pw.st-ready .pw-ring .fill, .pw.st-busy .pw-ring .fill { stroke: var(--bone); }
+    .pw.st-ready .pw-why { color: var(--dim); }
+    .pw.st-busy .pw-why { color: var(--bone); }
+    /* «Жми сейчас»: тёплый цвет плашки клёва и мягкая пульсация свечения. */
+    .pw.usable .pw-btn { color: #ffd9cf; background: radial-gradient(closest-side, rgba(74, 22, 20, 0.78), rgba(40, 6, 12, 0.5)); }
+    .pw.usable .pw-ring .fill { stroke: var(--warm); }
+    .pw.usable .pw-why { color: var(--warm); }
+    .pw.usable .pw-btn::after { animation: call 1.6s ease-in-out infinite; }
+    /* Ожидание и отчёт: кнопки на месте, но спокойные. */
+    .stage.calm .pw { opacity: 0.5; }
+
+    /* Плашки: не больше двух сразу, первая — на уровне кнопок. Пропавшая плашка гаснет (где браузер умеет display в переходе). */
+    .chips { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding-top: calc((var(--pw) - 36px) / 2); }
+    .chip { position: relative; display: none; align-items: center; justify-content: center; gap: 11px; box-sizing: border-box; max-width: 100%;
+      padding: 10px 16px 9px; opacity: 0; transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transition: opacity 0.4s ease, transform 0.4s ease, display 0.4s allow-discrete; }
+    .chip.on { display: flex; opacity: 1; transform: none; }
+    @starting-style { .chip.on { opacity: 0; transform: translateY(6px); } }
+    .bite { font-size: 11px; font-weight: 500; border: 1px solid rgba(255, 112, 112, 0.5); background: rgba(40, 6, 12, 0.45); }
+    .bite b { font-weight: 500; font-size: 13px; letter-spacing: 0.1em; }
+    .bite .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--blood); box-shadow: 0 0 12px var(--blood); }
+    .bite.on .dot { animation: throb 0.9s ease-in-out infinite; }
+    /* Динамит: огненная плашка с фитилём и тревожным пульсом; в последнюю секунду пульс чаще. */
+    .dyn { font-size: 11px; font-weight: 500; color: #ffe3c8; border: 1px solid rgba(255, 150, 64, 0.66); background: rgba(52, 20, 4, 0.6);
+      text-wrap: balance; }
+    .dyn b { font-weight: 500; font-size: 13px; letter-spacing: 0.08em; color: #ffb56d; font-variant-numeric: tabular-nums; }
+    .dyn::after { content: ""; position: absolute; inset: -1px; opacity: 0; pointer-events: none;
+      box-shadow: 0 0 22px 3px rgba(255, 122, 36, 0.55), inset 0 0 12px rgba(255, 122, 36, 0.3); }
+    .dyn.on::after { animation: alarm 0.9s ease-in-out infinite; }
+    .dyn.hot::after { animation-duration: 0.45s; }
+    .dyn.held::after { animation: none; opacity: 0.3; }
+    .fuse { flex: none; width: 7px; height: 7px; border-radius: 50%; background: #ffc46b; box-shadow: 0 0 6px 1px #ff8a2a, 0 0 14px #ff5a1a; }
+    .dyn.on .fuse { animation: spark 0.24s steps(2, jump-none) infinite; }
+    /* Оглушённые: тихая холодная плашка — подсказка, не тревога. */
+    .stun { flex-wrap: wrap; column-gap: 9px; row-gap: 2px; padding: 8px 16px 7px; border: 1px solid rgba(186, 214, 224, 0.4);
+      background: rgba(8, 18, 24, 0.58); }
+    .stun .mono { font-size: 11px; font-weight: 500; }
+    .stun b { font-weight: 500; font-size: 13px; }
+    .stun .how { flex-basis: 100%; font-style: italic; font-size: 17px; line-height: 1.1; color: var(--dim); }
+    .stun .sep { display: none; } /* в две строки тире в начале второй не нужно; в одну (телефон лёжа) — с тире */
+    .stun svg { flex: none; width: 19px; height: 12px; fill: none; stroke: #c3dbe2; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Звук и пауза — справа внизу, одна пара кнопок в одном стиле. */
+    .side { grid-area: side; justify-self: end; display: flex; align-items: flex-end; gap: 8px; }
+    .snd { display: flex; align-items: center; gap: 9px; margin: 0; padding: 10px 14px 9px; font: 500 10px var(--mono); letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--bone); background: var(--glass); border: 1px solid var(--faint); border-radius: 0; cursor: pointer;
+      pointer-events: auto; touch-action: manipulation; text-shadow: none; }
+    .snd svg { flex: none; width: 13px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+    .snd .mute { display: none; }
+    .snd[aria-pressed="false"] { color: var(--dim); border-color: var(--line); }
+    .snd[aria-pressed="false"] .waves { display: none; }
+    .snd[aria-pressed="false"] .mute { display: inline; }
+    .snd:focus-visible { outline: 1px solid var(--bone); outline-offset: 3px; }
+
+    .pause { position: relative; pointer-events: auto; }
     .pause summary { list-style: none; cursor: pointer; display: flex; gap: 9px; font-size: 10px; font-weight: 500;
       padding: 10px 14px 9px; border: 1px solid var(--faint); background: var(--glass); text-shadow: none; }
     .pause summary::-webkit-details-marker { display: none; }
@@ -130,8 +208,23 @@
     @keyframes breathe { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
     @keyframes throb { 50% { opacity: 0.35; transform: scale(0.7); } }
     @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+    @keyframes call { 0%, 100% { opacity: 0.22; } 50% { opacity: 1; } }
+    @keyframes alarm { 0%, 100% { opacity: 0.12; } 50% { opacity: 1; } }
+    @keyframes spark { from { opacity: 1; transform: scale(1); } to { opacity: 0.5; transform: scale(0.7); } }
 
-    /* Телефон в портрете: событие и поклёвка над нижней строкой, подсказки слева, пауза справа. */
+    /* Средняя ширина (планшет, узкое окно): низ всё ещё в одну строку — сцена уже, подсказки мельче, у «Звука» только значок.
+       Две строки съели бы середину, и карточка отчёта легла бы на кнопки. */
+    @media (max-width: 1100px) {
+      .stage { --pw: 56px; --pw-col: 80px; column-gap: 6px; width: min(540px, calc(100vw - var(--pad-l) - var(--pad-r) - 392px)); }
+      .hint { font-size: 9px; }
+      .snd-word { display: none; }
+    }
+    /* Невысокое окно: голод — в раскрывашку «Пауза» (как на телефоне), отчёт плотнее. */
+    @media (max-height: 700px) {
+      .hunger { display: none; }
+      .report { padding: 18px 24px 16px; } .report .big { font-size: 64px; } .report .text { margin: 12px 0 14px; }
+    }
+    /* Телефон в портрете: событие, под ним сцена сил во всю ширину, ниже подсказки слева, звук и пауза справа. */
     @media (max-width: 760px) {
       :root { --pad-l: calc(max(env(safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px)) + 16px);
         --pad-r: calc(max(env(safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)) + 16px);
@@ -145,11 +238,16 @@
       /* Голод на узком экране — в раскрывашке «Пауза»: строки мешали лампе и верху аквариума. В сцене голод виден и так —
          голодная рыбка тускнеет. */
       .hunger { display: none; }
-      .bottom { grid-template-columns: 1fr auto; grid-template-areas: "focus focus" "hint pause"; row-gap: 22px; }
+      .bottom { grid-template-columns: 1fr auto; grid-template-areas: "focus focus" "hint side"; row-gap: 22px; }
       .focus { gap: 12px; }
       .hint { font-size: 8.5px; line-height: 1.8; letter-spacing: 0.13em; }
       .pause-body { bottom: calc(100% + 26px); } /* подсказки слева выше кнопки — не задеваем их */
       .event { font-size: 25px; }
+      .stage { --pw: 56px; --pw-col: clamp(76px, 22vw, 92px); column-gap: 6px; width: 100%; }
+      .pw-cap { font-size: 8.5px; letter-spacing: 0.05em; } /* «рыбка над водой» — в одну строку при 390 px */
+      .chip { gap: 9px; padding-left: 12px; padding-right: 12px; }
+      .bite, .dyn, .stun .mono { font-size: 10.5px; }
+      .stun .how { font-size: 15px; }
       .report { padding: 22px 20px 20px; }
       .report .big { font-size: 68px; }
       .report .text { font-size: 18px; }
@@ -159,10 +257,22 @@
       .hunger, .hint { display: none; }
       .score b { font-size: 34px; }
       .report { padding: 14px 20px; } .report .big { font-size: 48px; } .report .text { margin: 8px 0 10px; }
+      /* Телефон лёжа: силы столбиком в левом нижнем углу под левым большим пальцем, аквариум посередине свободен. */
+      .bottom { grid-template-columns: 1fr auto 1fr; grid-template-areas: "hint focus side"; }
+      .stage { --pw: 54px; display: block; width: min(340px, 42vw); }
+      .pw { position: absolute; left: var(--pad-l); flex-direction: row; gap: 10px; }
+      #pw-diver { bottom: calc(var(--pad-b) + var(--pw) + 14px); }
+      #pw-arowana { bottom: var(--pad-b); }
+      .pw-cap { width: 118px; height: auto; text-align: left; }
+      .chips { flex-direction: row; flex-wrap: wrap; justify-content: center; padding-top: 0; } /* по высоте места нет — плашки в ряд */
+      .stun .how { flex-basis: auto; } .stun .sep { display: inline; }
+      .monitor { line-height: 1.75; }
+      .pause-body { line-height: 1.6; max-height: calc(100vh - 240px); } /* раскрытая пауза кончается под монитором */
     }
     @media (prefers-reduced-motion: reduce) {
-      .hud, .mid > *, .bite, .event, #veil, .veil-bar > i { transition: none; }
-      .prompt.on > span, .report.on .again, .bite.on .dot, .veil-caption, .pause-body { animation: none; }
+      .hud, .mid > *, .chip, .event, #veil, .veil-bar > i, .pw, .pw-ring .fill { transition: none; }
+      .prompt.on > span, .report.on .again, .bite.on .dot, .veil-caption, .pause-body, .dyn.on .fuse { animation: none; }
+      .pw.usable .pw-btn::after, .dyn.on::after { animation: none; opacity: 0.8; }
     }
 
     /* ---------- Запасной блок для старого window.__protoHud(top, center, bottom) ---------- */
@@ -263,6 +373,7 @@
         <div class="row"><span>Банка</span><span class="bank" id="h-bank"></span></div>
         <div class="row"><span>Улов</span><b id="h-caught">0</b></div>
         <div class="row"><span>Сорвалось</span><b id="h-breaks">0</b></div>
+        <div class="row"><span>Перерезано</span><b id="h-cuts">0</b></div>
         <div class="row"><span>Рыбок</span><b id="h-alive">0</b></div>
         <div class="hunger" id="h-hunger"></div>
       </div>
@@ -281,15 +392,51 @@
 
     <div class="bottom">
       <p class="hint mono">Тяни — обойти вокруг<br><span class="by-touch">Щипок — ближе</span><span class="by-mouse">Колесо — ближе</span><br><span
-        class="by-touch">Тап</span><span class="by-mouse">Клик</span> по воде — горсть</p>
+        class="by-touch">Тап</span><span class="by-mouse">Клик</span> по воде — горсть<span class="by-mouse"><br>1 — водолаз · 2 — аравана</span></p>
       <div class="focus">
-        <div class="bite mono" id="h-bite"><i class="dot"></i><span id="h-bite-text"></span></div>
         <p class="event" id="h-event" aria-live="polite"></p>
+        <div class="stage" id="h-stage">
+          <div class="pw off" id="pw-diver">
+            <button class="pw-btn" type="button" data-power="diver" aria-label="Водолаз">
+              <svg class="pw-ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="track" cx="32" cy="32" r="30.5"/><circle class="fill" cx="32" cy="32" r="30.5"/></svg>
+              <!-- Шлем водолаза: купол, окна, клапан, манишка с болтами -->
+              <svg class="pw-glyph" viewBox="0 0 32 32" aria-hidden="true"><path d="M9.64 21.16A9 9 0 1 1 22.36 21.16Q16 22.9 9.64 21.16Z"/><circle
+                cx="16" cy="15.2" r="4.2"/><circle cx="16" cy="15.2" r="2.4"/><circle cx="9.4" cy="13.6" r="1.5"/><circle cx="22.6" cy="13.6"
+                r="1.5"/><path d="M16 5.8V4M14.5 4h3M9.4 21.7 5.8 27.8h20.4l-3.6-6.1"/><path d="M9.6 25.2h.01M16 25.8h.01M22.4 25.2h.01"
+                stroke-width="2.2"/></svg>
+              <i class="pw-flash"></i>
+            </button>
+            <p class="pw-cap mono"><span class="pw-name">Водолаз</span><span class="pw-why"></span></p>
+          </div>
+          <div class="chips">
+            <div class="chip dyn mono" id="h-dyn"><i class="fuse"></i><span id="h-dyn-text"></span></div>
+            <div class="chip bite mono" id="h-bite"><i class="dot"></i><span id="h-bite-text"></span></div>
+            <div class="chip stun" id="h-stun"><svg viewBox="0 0 19 12" aria-hidden="true"><path d="M1.5 6.5C4 3.2 9.5 3.2 13.2 6.5 9.5 9.8 4 9.8 1.5 6.5ZM13.2 6.5 17.5 3.8V9.2ZM4 5.6l1.4 1.4M5.4 5.6 4 7M7.5 4.1 8.6 1.6 10 4.4"/></svg><span
+              class="mono">Оглушены: <b id="h-stun-n">0</b></span><span class="how"><span class="sep">— </span>горсть рядом разбудит</span></div>
+          </div>
+          <div class="pw off" id="pw-arowana">
+            <button class="pw-btn" type="button" data-power="arowana" aria-label="Аравана">
+              <svg class="pw-ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="track" cx="32" cy="32" r="30.5"/><circle class="fill" cx="32" cy="32" r="30.5"/></svg>
+              <!-- Аравана в прыжке: вздёрнутая пасть с усами, плавники у хвоста, длинный грудной плавник -->
+              <svg class="pw-glyph" viewBox="0 0 32 32" aria-hidden="true"><g transform="rotate(-18 16 16) translate(-1 0)"><path
+                d="M30 12.6C25.6 10.4 17 10.4 8.6 15V17C17 21.4 24.8 20.6 29 16.2Z"/><path d="M8.6 15 3 11.6Q4.6 16 3 20.4L8.6 17M13.4 12.4 10.4 10.6
+                9.8 14.3M13.6 19.6l-3 1.8-.8-3.6M30 12.6l-2.4 2.8M22.6 12.2q1.8 3.4-.2 7M23.8 19.4q-1.8 3-5.4 3.8M30 12.6l2-2.2M30.1 13.1l2.5-.4"/><circle
+                cx="25.6" cy="13.7" r=".95"/></g></svg>
+              <i class="pw-flash"></i>
+            </button>
+            <p class="pw-cap mono"><span class="pw-name">Аравана</span><span class="pw-why"></span></p>
+          </div>
+        </div>
       </div>
-      <details class="pause" id="h-pause">
-        <summary class="mono">Пауза</summary>
-        <div class="pause-body" id="h-pause-body"></div>
-      </details>
+      <div class="side" id="h-side">
+        <button class="snd" id="h-sound" type="button" aria-pressed="true"><svg viewBox="0 0 13 11" aria-hidden="true"><path
+          d="M1 3.8h2.4L6.4 1.3v8.4L3.4 7.2H1Z"/><path class="waves" d="M8.6 3.6q1.3 1.9 0 3.8M10.4 1.9q2.4 3.6 0 7.2"/><path class="mute"
+          d="M8.7 3.7l3.4 3.6M12.1 3.7 8.7 7.3"/></svg><span><span class="snd-word">Звук </span><span id="h-sound-state">вкл</span></span></button>
+        <details class="pause" id="h-pause">
+          <summary class="mono">Пауза</summary>
+          <div class="pause-body" id="h-pause-body"></div>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -333,7 +480,100 @@
         caught = $("h-caught"), breaks = $("h-breaks"), alive = $("h-alive"), hunger = $("h-hunger"),
         prompt = $("h-prompt"), promptText = prompt.firstChild, report = $("h-report"), reportScore = $("h-report-score"),
         reportText = $("h-report-text"), bite = $("h-bite"), biteText = $("h-bite-text"), event = $("h-event"),
-        pause = $("h-pause"), pauseBody = $("h-pause-body");
+        pause = $("h-pause"), pauseBody = $("h-pause-body"), cuts = $("h-cuts"), stage = $("h-stage"), dynChip = $("h-dyn"),
+        dynText = $("h-dyn-text"), stunChip = $("h-stun"), stunN = $("h-stun-n"), soundBtn = $("h-sound"), soundState = $("h-sound-state");
+
+      // Игре — через экземпляр Unity (его кладёт загрузчик в window.__unity). До запуска игры сообщения некуда слать — молчим.
+      function tell(method, arg) {
+        var u = window.__unity;
+        if (u && u.SendMessage) u.SendMessage("ProtoGame", method, arg);
+      }
+      window.__protoPower = function (id) { tell("UsePower", String(id)); };
+
+      // Касание кнопки не должно стать тапом по воде: гасим всплытие к document/window, где слушает Unity (до canvas оно
+      // и так не доходит — canvas не предок кнопок). Отпускание гасим, только если нажатие началось на кнопке: тяга камеры
+      // с воды, отпущенная над кнопкой, должна дойти до игры, иначе камера «залипнет».
+      var pressedOn = null;
+      ["pointerdown", "touchstart", "mousedown"].forEach(function (t) {
+        window.addEventListener(t, function (e) { pressedOn = e.target; }, true);
+      });
+      function shield(el) {
+        ["pointerdown", "touchstart", "mousedown", "click"].forEach(function (t) {
+          el.addEventListener(t, function (e) { e.stopPropagation(); });
+        });
+        ["pointerup", "touchend", "mouseup"].forEach(function (t) {
+          el.addEventListener(t, function (e) { if (pressedOn && el.contains(pressedOn)) e.stopPropagation(); });
+        });
+      }
+      // Нажатие — только click: он один на тап и на клик (pointerup + click дали бы два вызова). Фокус после мыши/пальца
+      // не держим, чтобы пробел и Enter оставались игре.
+      function onPress(btn, fn) {
+        shield(btn);
+        btn.addEventListener("click", function (e) {
+          fn();
+          if (e.detail) btn.blur();
+        });
+      }
+
+      // ---------- Суперсилы ----------
+      var POWER_NAMES = { diver: "Водолаз", arowana: "Аравана" }, POWER_STATES = ["sleep", "charging", "ready", "busy"];
+      var RING = 2 * Math.PI * 30.5, powers = {};
+      Object.keys(POWER_NAMES).forEach(function (id) {
+        var root = $("pw-" + id), btn = root.querySelector(".pw-btn");
+        powers[id] = { id: id, root: root, btn: btn, fill: root.querySelector(".pw-ring .fill"), flash: root.querySelector(".pw-flash"),
+          name: root.querySelector(".pw-name"), why: root.querySelector(".pw-why"), state: "", dash: "", label: "" };
+        onPress(btn, function () { window.__protoPower(id); });
+      });
+      function findPower(list, id) {
+        for (var i = 0; list && i < list.length; i++) if (list[i] && list[i].id === id) return list[i];
+        return null;
+      }
+      function drawPower(p, d, calm) {
+        flag(p.root, "off", !d);
+        if (!d) { p.state = ""; return; }
+        var st = POWER_STATES.indexOf(d.state) >= 0 ? d.state : "sleep";
+        if (p.state !== st) {
+          POWER_STATES.forEach(function (k) { flag(p.root, "st-" + k, k === st); });
+          // Сила только что стала готова — короткая вспышка, один раз (в ожидании и отчёте — без неё).
+          if ((p.state === "sleep" || p.state === "charging") && st === "ready" && !calm)
+            play(p.flash, [{ opacity: 0.9, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.7)" }], 900);
+          p.state = st;
+        }
+        flag(p.root, "usable", !!d.usable && st === "ready" && !calm);
+        var prog = st === "ready" || st === "busy" ? 1 : Math.max(0, Math.min(1, num(d.progress)));
+        var dash = (Math.round(prog * 100) / 100 * RING).toFixed(1);
+        if (p.dash !== dash) { p.dash = dash; p.fill.style.strokeDasharray = dash + " " + RING.toFixed(1); }
+        // Подпись решает игра; если не прислала — «в деле» или сколько ждать.
+        var why = d.why != null && String(d.why) !== "" ? String(d.why)
+          : st === "busy" ? "в деле" : st === "ready" ? "" : mmss(Math.ceil(num(d.eta)));
+        var name = d.name ? String(d.name) : POWER_NAMES[p.id];
+        put(p.why, "why-" + p.id, rich(why.replace(/ ([—–]) /g, "\u00a0$1 "))); // тире не начинает строку
+        put(p.name, "name-" + p.id, rich(name));
+        var label = name + (why ? " — " + p.why.textContent : "");
+        if (p.label !== label) { p.label = label; p.btn.setAttribute("aria-label", label); }
+      }
+
+      // Динамит: отсчёт до десятой вверх, чтобы тикающий не показал «0,0» — ноль значит «держит водолаз».
+      function tenths(v) {
+        return Math.max(0.1, Math.ceil(v * 10 - 1e-6) / 10).toFixed(1).replace(".", ",");
+      }
+
+      // ---------- Звук: выбор игрока в localStorage (в части WebView его нет — тогда помним до перезагрузки) ----------
+      var sound = true;
+      try { sound = window.localStorage.getItem("aqua.sound") !== "0"; } catch (e) { /* хранилище недоступно — звук включён */ }
+      function drawSound() {
+        soundBtn.setAttribute("aria-pressed", sound ? "true" : "false");
+        soundState.textContent = sound ? "вкл" : "выкл";
+      }
+      window.__protoSoundSync = function () { tell("SetSound", sound ? "1" : "0"); };
+      onPress(soundBtn, function () {
+        sound = !sound;
+        try { window.localStorage.setItem("aqua.sound", sound ? "1" : "0"); } catch (e) { /* не сохранится — не страшно */ }
+        drawSound();
+        window.__protoSoundSync();
+      });
+      drawSound();
+      shield(pause);
 
       // DOM трогаем только когда значение поменялось: игра шлёт состояние ~10 раз в секунду.
       var shown = {};
@@ -409,6 +649,8 @@
         if (!hud.classList.contains("live")) {
           hud.classList.add("live");
           document.body.classList.add("hud-live");
+          // Игра прислала первое состояние — объект ProtoGame точно жив: повторяем ему «Звук» (сразу после старта мог не успеть).
+          window.__protoSoundSync();
         }
         var phase = s.phase || "", sc = Math.round(num(s.score)), left = num(s.shiftLeft);
 
@@ -419,6 +661,7 @@
         drawBank(num(s.bank), num(s.bankMax), num(s.bankProgress));
         put(caught, "caught", String(num(s.caught)));
         put(breaks, "breaks", String(num(s.breaks)));
+        put(cuts, "cuts", String(num(s.cuts)));
         put(alive, "alive", String(num(s.alive)));
         var hungerRaw = s.hunger || "";
         if (shown.hunger !== hungerRaw) {
@@ -436,11 +679,26 @@
         flag(prompt, "on", center && !isReport);
         flag(report, "on", isReport);
 
+        // Суперсилы: кнопки появляются с первым состоянием, где игра их прислала (старая сборка не шлёт). Вне смены — спокойные.
+        var list = Array.isArray(s.powers) ? s.powers : null, calm = phase !== "Shift";
+        flag(stage, "calm", calm);
+        for (var id in powers) drawPower(powers[id], findPower(list, id), calm);
+
         // Клёв: «Поклёвка 1/2» заметной плашкой; каждая новая поклёвка — толчок.
         var total = num(s.bitesTotal), done = num(s.bites);
         if (total > 0 && put(biteText, "bite", "Поклёвка <b>" + done + "/" + total + "</b>") && done > 0)
           play(bite, [{ transform: "scale(1.08)" }, { transform: "scale(1)" }], 420);
-        flag(bite, "on", total > 0 && phase === "Shift" && /КЛЁВ|подсечка/.test(s.rod || "")); // только пока клёв или подсечка
+        var biteOn = total > 0 && phase === "Shift" && /КЛЁВ|подсечка/.test(s.rod || ""); // только пока клёв или подсечка
+        // Динамит (dyn ≥ 0; 0 — держит водолаз) и оглушённые. Плашек не больше двух: динамит, клёв, оглушённые —
+        // по срочности; оглушённые ждут, пока догорит динамит.
+        var dyn = s.dyn == null ? -1 : num(s.dyn), dynOn = dyn >= 0, stun = Math.max(0, Math.round(num(s.stunned)));
+        if (dynOn) put(dynText, "dyn", dyn > 0 ? "Динамит · <b>" + tenths(dyn) + "</b>" : "Водолаз держит динамит");
+        flag(dynChip, "held", dynOn && dyn === 0);
+        flag(dynChip, "hot", dyn > 0 && dyn <= 1);
+        put(stunN, "stun", String(stun));
+        flag(dynChip, "on", dynOn);
+        flag(bite, "on", biteOn);
+        flag(stunChip, "on", stun > 0 && !(dynOn && biteOn));
 
         // Событие: появляется мягко и гаснет, когда игра присылает "". Не дублируем то, что уже на экране:
         // «Поклёвка n/m» есть на плашке, «Тапни по воде» — начало подсказки в центре.
@@ -451,17 +709,17 @@
           play(event, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], 500);
         flag(event, "on", !!ev);
 
-        pauseText = (s.hunger && window.matchMedia("(max-width: 760px)").matches ? "Голод\n" + s.hunger + "\n\n" : "") + (s.pause || "");
+        pauseText = (s.hunger && window.matchMedia("(max-width: 760px), (min-height: 521px) and (max-height: 700px)").matches ? "Голод\n" + s.hunger + "\n\n" : "") + (s.pause || "");
         if (pause.open) put(pauseBody, "pause", rich(pauseText));
       };
     })();
   </script>
-  <script src="Build/Prototype-Telegram.loader.js"></script>
+  <script src="Build/Prototype-powers-check.loader.js"></script>
   <script>
     var config = {
-      dataUrl: "Build/Prototype-Telegram.data.unityweb",
-      frameworkUrl: "Build/Prototype-Telegram.framework.js.unityweb",
-      codeUrl: "Build/Prototype-Telegram.wasm.unityweb",
+      dataUrl: "Build/Prototype-powers-check.data.unityweb",
+      frameworkUrl: "Build/Prototype-powers-check.framework.js.unityweb",
+      codeUrl: "Build/Prototype-powers-check.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "UNITY_game_001_new",
@@ -476,7 +734,9 @@
       pct.textContent = Math.floor(100 * progress) + "%";
       if (progress >= 0.9 && caption.textContent !== "Запускаем…") caption.textContent = "Запускаем…";
     }).then(function (instance) {
+      window.__unity = instance; // через него кнопки суперсил и «Звук» шлют игре SendMessage("ProtoGame", …)
       window.__unityStartedMs = performance.now();
+      window.__protoSoundSync(); // сохранённый выбор «Звука» — игре сразу после запуска
       bar.style.transform = "scaleX(1)";
       pct.textContent = "100%";
       veil.classList.add("gone");
